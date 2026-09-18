@@ -18,14 +18,47 @@ impl ContextWindowSegment {
         let model_config = ModelConfig::load();
         model_config.get_context_limit(model_id)
     }
+
+    /// Resolve `(context limit, tokens currently in the context)`.
+    ///
+    /// Prefers what Claude Code reports on the payload: it knows the real
+    /// window size (e.g. a 1M-token session), which can't be reliably
+    /// inferred from the model id. Payloads without `context_window` (older
+    /// Claude Code) keep the original behaviour: guess the window from the
+    /// model id and read usage from the transcript.
+    fn resolve_usage(input: &InputData) -> (u32, Option<u32>) {
+        let Some(cw) = &input.context_window else {
+            return (
+                Self::get_context_limit_for_model(&input.model.id),
+                parse_transcript_usage(&input.transcript_path),
+            );
+        };
+
+        let limit = cw
+            .context_window_size
+            .filter(|&size| size > 0)
+            .unwrap_or_else(|| Self::get_context_limit_for_model(&input.model.id));
+
+        let used = match &cw.current_usage {
+            // Usage of the most recent API call, counted exactly like the
+            // transcript path: input + cache reads/writes + output.
+            Some(usage) => Some(usage.clone().normalize().display_tokens()),
+            // No API call yet in this session: Claude Code sends zeroed
+            // totals (and null percentages), so there is nothing to show.
+            None if cw.total_input_tokens.unwrap_or(0) == 0 => None,
+            // Totals without `current_usage` come from older Claude Code
+            // builds, where they may be session-cumulative rather than the
+            // current context: read the transcript as before.
+            None => parse_transcript_usage(&input.transcript_path),
+        };
+
+        (limit, used)
+    }
 }
 
 impl Segment for ContextWindowSegment {
     fn collect(&self, input: &InputData) -> Option<SegmentData> {
-        // Dynamically determine context limit based on current model ID
-        let context_limit = Self::get_context_limit_for_model(&input.model.id);
-
-        let context_used_token_opt = parse_transcript_usage(&input.transcript_path);
+        let (context_limit, context_used_token_opt) = Self::resolve_usage(input);
 
         let (percentage_display, tokens_display) = match context_used_token_opt {
             Some(context_used_token) => {
@@ -269,4 +302,65 @@ fn try_find_usage_from_project_history(transcript_path: &Path) -> Option<u32> {
     }
 
     None
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    fn input_with(context_window: serde_json::Value) -> InputData {
+        serde_json::from_value(json!({
+            "model": {"id": "claude-sonnet-5", "display_name": "Sonnet 5"},
+            "workspace": {"current_dir": "/tmp"},
+            "transcript_path": "/nonexistent/transcript.jsonl",
+            "context_window": context_window,
+        }))
+        .unwrap()
+    }
+
+    #[test]
+    fn uses_payload_window_and_last_call_usage() {
+        // Captured from Claude Code 2.1.275 in a 1M-context session, where the
+        // model-id guess (200k) used to turn 7.5% into 37.6%.
+        let input = input_with(json!({
+            "total_input_tokens": 75086,
+            "total_output_tokens": 144,
+            "context_window_size": 1_000_000,
+            "current_usage": {
+                "input_tokens": 2,
+                "output_tokens": 144,
+                "cache_creation_input_tokens": 896,
+                "cache_read_input_tokens": 74188
+            },
+            "used_percentage": 8,
+            "remaining_percentage": 92
+        }));
+
+        assert_eq!(
+            ContextWindowSegment::resolve_usage(&input),
+            (1_000_000, Some(75_230))
+        );
+        let data = ContextWindowSegment::new().collect(&input).unwrap();
+        assert_eq!(data.primary, "7.5% · 75.2k tokens");
+    }
+
+    #[test]
+    fn shows_no_usage_before_first_response() {
+        let input = input_with(json!({
+            "total_input_tokens": 0,
+            "total_output_tokens": 0,
+            "context_window_size": 1_000_000,
+            "current_usage": null,
+            "used_percentage": null,
+            "remaining_percentage": null
+        }));
+
+        assert_eq!(
+            ContextWindowSegment::resolve_usage(&input),
+            (1_000_000, None)
+        );
+        let data = ContextWindowSegment::new().collect(&input).unwrap();
+        assert_eq!(data.primary, "- · - tokens");
+    }
 }

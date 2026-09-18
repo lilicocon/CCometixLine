@@ -117,6 +117,24 @@ pub struct InputData {
     pub transcript_path: String,
     pub cost: Option<Cost>,
     pub output_style: Option<OutputStyle>,
+    pub context_window: Option<ContextWindowInfo>,
+}
+
+// Authoritative context-window usage reported directly by Claude Code.
+// Present since Claude Code added support for extended context windows
+// (e.g. the 1M-token beta), where the true window size can't be inferred
+// from the model id alone.
+#[derive(Deserialize)]
+pub struct ContextWindowInfo {
+    pub total_input_tokens: Option<u32>,
+    pub total_output_tokens: Option<u32>,
+    pub context_window_size: Option<u32>,
+    // Usage of the most recent API call (same shape as a transcript `usage`
+    // object); null until the session's first response.
+    pub current_usage: Option<Usage>,
+    // Claude Code's own rounded figure: input side only, 0-100.
+    pub used_percentage: Option<f64>,
+    pub remaining_percentage: Option<f64>,
 }
 
 // OpenAI-style nested token details
