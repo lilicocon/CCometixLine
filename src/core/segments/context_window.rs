@@ -6,11 +6,20 @@ use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
 
 #[derive(Default)]
-pub struct ContextWindowSegment;
+pub struct ContextWindowSegment {
+    show_200k_marker: bool,
+}
 
 impl ContextWindowSegment {
     pub fn new() -> Self {
-        Self
+        Self::default()
+    }
+
+    /// Mark the segment while Claude Code reports `exceeds_200k_tokens`: on a
+    /// 1M window the percentage alone doesn't show that 200k was crossed.
+    pub fn with_200k_marker(mut self, show: bool) -> Self {
+        self.show_200k_marker = show;
+        self
     }
 
     /// Get context limit for the specified model
@@ -103,10 +112,21 @@ impl Segment for ContextWindowSegment {
         }
         metadata.insert("limit".to_string(), context_limit.to_string());
         metadata.insert("model".to_string(), input.model.id.clone());
+        if let Some(exceeds) = input.exceeds_200k_tokens {
+            metadata.insert("exceeds_200k_tokens".to_string(), exceeds.to_string());
+        }
+
+        // Claude Code's own flag rather than our count, which includes output
+        // tokens; payloads without it (older Claude Code) never show the marker.
+        let secondary = if self.show_200k_marker && input.exceeds_200k_tokens == Some(true) {
+            "⚠ >200k".to_string()
+        } else {
+            String::new()
+        };
 
         Some(SegmentData {
             primary: format!("{} · {} tokens", percentage_display, tokens_display),
-            secondary: String::new(),
+            secondary,
             metadata,
         })
     }
@@ -343,6 +363,46 @@ mod tests {
         );
         let data = ContextWindowSegment::new().collect(&input).unwrap();
         assert_eq!(data.primary, "7.5% · 75.2k tokens");
+    }
+
+    #[test]
+    fn marks_contexts_over_200k_only_when_enabled() {
+        let over_200k = |exceeds: serde_json::Value| -> InputData {
+            let mut input = input_with(json!({
+                "total_input_tokens": 250_000,
+                "total_output_tokens": 500,
+                "context_window_size": 1_000_000,
+                "current_usage": {
+                    "input_tokens": 1_000,
+                    "output_tokens": 500,
+                    "cache_creation_input_tokens": 9_000,
+                    "cache_read_input_tokens": 240_000
+                }
+            }));
+            input.exceeds_200k_tokens = serde_json::from_value(exceeds).unwrap();
+            input
+        };
+        let marked = ContextWindowSegment::new().with_200k_marker(true);
+
+        assert_eq!(
+            marked.collect(&over_200k(json!(true))).unwrap().secondary,
+            "⚠ >200k"
+        );
+        assert_eq!(
+            marked.collect(&over_200k(json!(false))).unwrap().secondary,
+            ""
+        );
+        assert_eq!(
+            marked.collect(&over_200k(json!(null))).unwrap().secondary,
+            ""
+        );
+        assert_eq!(
+            ContextWindowSegment::new()
+                .collect(&over_200k(json!(true)))
+                .unwrap()
+                .secondary,
+            ""
+        );
     }
 
     #[test]

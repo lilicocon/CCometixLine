@@ -486,7 +486,12 @@ pub fn collect_all_segments(
                 segment.collect(input)
             }
             crate::config::SegmentId::ContextWindow => {
-                let segment = ContextWindowSegment::new();
+                let show_200k_marker = segment_config
+                    .options
+                    .get("show_200k_marker")
+                    .and_then(|v| v.as_bool())
+                    .unwrap_or(false);
+                let segment = ContextWindowSegment::new().with_200k_marker(show_200k_marker);
                 segment.collect(input)
             }
             crate::config::SegmentId::Usage => {

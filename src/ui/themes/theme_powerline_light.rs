@@ -115,7 +115,14 @@ pub fn context_window_segment() -> SegmentConfig {
             }),
         },
         styles: TextStyleConfig::default(),
-        options: HashMap::new(),
+        options: {
+            let mut opts = HashMap::new();
+            opts.insert(
+                "show_200k_marker".to_string(),
+                serde_json::Value::Bool(false),
+            );
+            opts
+        },
     }
 }
 
