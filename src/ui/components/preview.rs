@@ -183,6 +183,16 @@ impl PreviewComponent {
                         map
                     },
                 },
+                SegmentId::PromptCache => SegmentData {
+                    primary: "96%".to_string(),
+                    secondary: "· 47m".to_string(),
+                    metadata: HashMap::new(),
+                },
+                SegmentId::Mode => SegmentData {
+                    primary: "high · think".to_string(),
+                    secondary: "".to_string(),
+                    metadata: HashMap::new(),
+                },
             };
 
             segments_data.push((segment_config.clone(), mock_data));

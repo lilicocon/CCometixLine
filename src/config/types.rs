@@ -74,6 +74,8 @@ pub enum SegmentId {
     Session,
     OutputStyle,
     Update,
+    PromptCache,
+    Mode,
 }
 
 // Legacy compatibility structure

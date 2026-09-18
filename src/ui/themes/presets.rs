@@ -137,6 +137,8 @@ impl ThemePresets {
                 theme_cometix::cost_segment(),
                 theme_cometix::session_segment(),
                 theme_cometix::output_style_segment(),
+                theme_cometix::prompt_cache_segment(),
+                theme_cometix::mode_segment(),
             ],
             theme: "cometix".to_string(),
         }
@@ -157,6 +159,8 @@ impl ThemePresets {
                 theme_default::cost_segment(),
                 theme_default::session_segment(),
                 theme_default::output_style_segment(),
+                theme_default::prompt_cache_segment(),
+                theme_default::mode_segment(),
             ],
             theme: "default".to_string(),
         }
@@ -177,6 +181,8 @@ impl ThemePresets {
                 theme_minimal::cost_segment(),
                 theme_minimal::session_segment(),
                 theme_minimal::output_style_segment(),
+                theme_minimal::prompt_cache_segment(),
+                theme_minimal::mode_segment(),
             ],
             theme: "minimal".to_string(),
         }
@@ -197,6 +203,8 @@ impl ThemePresets {
                 theme_gruvbox::cost_segment(),
                 theme_gruvbox::session_segment(),
                 theme_gruvbox::output_style_segment(),
+                theme_gruvbox::prompt_cache_segment(),
+                theme_gruvbox::mode_segment(),
             ],
             theme: "gruvbox".to_string(),
         }
@@ -217,6 +225,8 @@ impl ThemePresets {
                 theme_nord::cost_segment(),
                 theme_nord::session_segment(),
                 theme_nord::output_style_segment(),
+                theme_nord::prompt_cache_segment(),
+                theme_nord::mode_segment(),
             ],
             theme: "nord".to_string(),
         }
@@ -237,6 +247,8 @@ impl ThemePresets {
                 theme_powerline_dark::cost_segment(),
                 theme_powerline_dark::session_segment(),
                 theme_powerline_dark::output_style_segment(),
+                theme_powerline_dark::prompt_cache_segment(),
+                theme_powerline_dark::mode_segment(),
             ],
             theme: "powerline-dark".to_string(),
         }
@@ -257,6 +269,8 @@ impl ThemePresets {
                 theme_powerline_light::cost_segment(),
                 theme_powerline_light::session_segment(),
                 theme_powerline_light::output_style_segment(),
+                theme_powerline_light::prompt_cache_segment(),
+                theme_powerline_light::mode_segment(),
             ],
             theme: "powerline-light".to_string(),
         }
@@ -277,6 +291,8 @@ impl ThemePresets {
                 theme_powerline_rose_pine::cost_segment(),
                 theme_powerline_rose_pine::session_segment(),
                 theme_powerline_rose_pine::output_style_segment(),
+                theme_powerline_rose_pine::prompt_cache_segment(),
+                theme_powerline_rose_pine::mode_segment(),
             ],
             theme: "powerline-rose-pine".to_string(),
         }
@@ -297,6 +313,8 @@ impl ThemePresets {
                 theme_powerline_tokyo_night::cost_segment(),
                 theme_powerline_tokyo_night::session_segment(),
                 theme_powerline_tokyo_night::output_style_segment(),
+                theme_powerline_tokyo_night::prompt_cache_segment(),
+                theme_powerline_tokyo_night::mode_segment(),
             ],
             theme: "powerline-tokyo-night".to_string(),
         }

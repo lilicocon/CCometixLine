@@ -173,3 +173,35 @@ pub fn usage_segment() -> SegmentConfig {
         },
     }
 }
+
+pub fn prompt_cache_segment() -> SegmentConfig {
+    // Cost's palette: both are about what the session spends
+    let base = cost_segment();
+    SegmentConfig {
+        id: SegmentId::PromptCache,
+        enabled: false,
+        icon: IconConfig {
+            plain: "↻".to_string(),
+            nerd_font: "\u{f00e8}".to_string(), // nf-md-cached
+        },
+        colors: base.colors,
+        styles: base.styles,
+        options: HashMap::new(),
+    }
+}
+
+pub fn mode_segment() -> SegmentConfig {
+    // Model's palette: effort and thinking are model settings
+    let base = model_segment();
+    SegmentConfig {
+        id: SegmentId::Mode,
+        enabled: false,
+        icon: IconConfig {
+            plain: "◇".to_string(),
+            nerd_font: "\u{f09d1}".to_string(), // nf-md-brain
+        },
+        colors: base.colors,
+        styles: base.styles,
+        options: HashMap::new(),
+    }
+}
