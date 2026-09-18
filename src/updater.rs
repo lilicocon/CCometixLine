@@ -153,11 +153,16 @@ impl UpdateState {
 
 /// npm registry version check
 mod registry {
-    /// Check @cometix/ccline latest version from npm registry
-    pub fn check_for_updates() -> Result<Option<String>, Box<dyn std::error::Error>> {
-        let url = "https://registry.npmjs.org/@cometix/ccline/latest";
+    /// The npm package this fork is published as (npm/main/package.json)
+    pub(super) const NPM_PACKAGE: &str = "@lilicocon/ccline";
 
-        let response = ureq::get(url).header("Accept", "application/json").call()?;
+    /// Check the latest published version of NPM_PACKAGE
+    pub fn check_for_updates() -> Result<Option<String>, Box<dyn std::error::Error>> {
+        let url = format!("https://registry.npmjs.org/{}/latest", NPM_PACKAGE);
+
+        let response = ureq::get(&url)
+            .header("Accept", "application/json")
+            .call()?;
 
         let data: serde_json::Value = response.into_body().read_json()?;
         let latest = data["version"].as_str().ok_or("Missing version field")?;
@@ -171,5 +176,19 @@ mod registry {
         } else {
             Ok(None)
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn checks_the_package_this_repo_publishes() {
+        let package: serde_json::Value = serde_json::from_str(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/npm/main/package.json"
+        )))
+        .unwrap();
+
+        assert_eq!(package["name"], super::registry::NPM_PACKAGE);
     }
 }
