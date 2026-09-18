@@ -205,13 +205,25 @@ jobs:
       run: |
         set -euo pipefail
         MAIN_NAME=$(node -p "require('./npm/main/package.json').name")
+        # npm silently rewrites manifests it considers invalid at publish time
+        # (npm 11 drops "./"-prefixed bin paths, which would ship a launcher
+        # package without the `ccline` command): treat any rewrite as an error.
+        dry_run() {
+          local out
+          out=$(cd "$1" && npm publish --dry-run --access public 2>&1) || { echo "$out"; return 1; }
+          echo "$out"
+          if grep -q "auto-corrected" <<<"$out"; then
+            echo "::error::npm rewrote $1/package.json at publish time (see above)"
+            return 1
+          fi
+        }
         PLATFORMS=(darwin-x64 darwin-arm64 linux-x64 linux-x64-musl linux-arm64 linux-arm64-musl win32-x64)
         for platform in "${PLATFORMS[@]}"; do
           echo "Dry-run ${MAIN_NAME}-${platform}"
-          (cd "npm-publish/${platform}" && npm publish --dry-run --access public)
+          dry_run "npm-publish/${platform}"
         done
         echo "Dry-run ${MAIN_NAME}"
-        (cd npm-publish/main && npm publish --dry-run --access public)
+        dry_run npm-publish/main
 
     - name: Upload npm-publish artifact
       uses: actions/upload-artifact@v4

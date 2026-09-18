@@ -50,6 +50,16 @@ CCLINE_SKIP_POSTINSTALL=1 npm i -g @lilicocon/ccline
 
 `npm_config_loglevel=silent` only quiets postinstall logs; it does not skip the copy.
 
+npm 11 warns that the postinstall script is not covered by `allow-scripts`. If
+your npm version blocks unapproved install scripts, allow this one explicitly:
+
+```bash
+npm i -g @lilicocon/ccline --allow-scripts=@lilicocon/ccline
+```
+
+or skip the copy entirely and point `statusLine.command` at `ccline` (the global
+command finds the platform binary on its own).
+
 ## Links
 
 - GitHub: https://github.com/lilicocon/CCometixLine
