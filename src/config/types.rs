@@ -1,4 +1,5 @@
-use serde::{Deserialize, Serialize};
+use serde::de::DeserializeOwned;
+use serde::{Deserialize, Deserializer, Serialize};
 use std::collections::HashMap;
 
 // Main config structure
@@ -94,6 +95,10 @@ pub struct Model {
 #[derive(Deserialize)]
 pub struct Workspace {
     pub current_dir: String,
+    #[serde(default, deserialize_with = "lenient")]
+    pub project_dir: Option<String>,
+    #[serde(default, deserialize_with = "lenient")]
+    pub added_dirs: Option<Vec<String>>,
 }
 
 #[derive(Deserialize)]
@@ -117,7 +122,49 @@ pub struct InputData {
     pub transcript_path: String,
     pub cost: Option<Cost>,
     pub output_style: Option<OutputStyle>,
+
+    // Fields added by newer Claude Code releases. Each is optional and parsed
+    // leniently: absent (older Claude Code) or malformed (a future schema
+    // change) values become `None` instead of failing the whole status line.
+    #[serde(default, deserialize_with = "lenient")]
     pub context_window: Option<ContextWindowInfo>,
+    #[serde(default, deserialize_with = "lenient")]
+    pub exceeds_200k_tokens: Option<bool>,
+    #[serde(default, deserialize_with = "lenient")]
+    pub rate_limits: Option<RateLimits>,
+    #[serde(default, deserialize_with = "lenient")]
+    pub prompt_cache: Option<PromptCache>,
+    #[serde(default, deserialize_with = "lenient")]
+    pub effort: Option<Effort>,
+    #[serde(default, deserialize_with = "lenient")]
+    pub thinking: Option<Thinking>,
+    #[serde(default, deserialize_with = "lenient")]
+    pub fast_mode: Option<bool>,
+    #[serde(default, deserialize_with = "lenient")]
+    pub version: Option<String>,
+    #[serde(default, deserialize_with = "lenient")]
+    pub session_id: Option<String>,
+    #[serde(default, deserialize_with = "lenient")]
+    pub session_name: Option<String>,
+    #[serde(default, deserialize_with = "lenient")]
+    pub prompt_id: Option<String>,
+    #[serde(default, deserialize_with = "lenient")]
+    pub cwd: Option<String>,
+    #[serde(default, deserialize_with = "lenient")]
+    pub scratchpad_dir: Option<String>,
+}
+
+/// Deserialize an optional payload field without letting it fail the whole
+/// payload: a missing, `null` or malformed value all become `None`. Fields
+/// using it also need `#[serde(default)]`: serde only fills in `None` for an
+/// absent `Option` field by itself when no `deserialize_with` is set.
+fn lenient<'de, D, T>(deserializer: D) -> Result<Option<T>, D::Error>
+where
+    D: Deserializer<'de>,
+    T: DeserializeOwned,
+{
+    let value = serde_json::Value::deserialize(deserializer)?;
+    Ok(T::deserialize(value).ok())
 }
 
 // Authoritative context-window usage reported directly by Claude Code.
@@ -135,6 +182,69 @@ pub struct ContextWindowInfo {
     // Claude Code's own rounded figure: input side only, 0-100.
     pub used_percentage: Option<f64>,
     pub remaining_percentage: Option<f64>,
+}
+
+// Claude.ai subscription limits (or a Claude gateway spend limit) as Claude
+// Code tracks them from API responses. Only sent after the first response,
+// and each window is dropped once its `resets_at` has passed.
+#[derive(Deserialize)]
+pub struct RateLimits {
+    pub five_hour: Option<RateLimitWindow>,
+    pub seven_day: Option<RateLimitWindow>,
+    pub spend_limit: Option<RateLimitWindow>,
+}
+
+#[derive(Deserialize)]
+pub struct RateLimitWindow {
+    // 0-100 (a spend limit can go above 100 once exceeded)
+    pub used_percentage: Option<f64>,
+    // Unix epoch seconds
+    pub resets_at: Option<i64>,
+}
+
+// Prompt-cache health of the main conversation, sent after the first
+// API response. Timestamps are Unix epoch seconds.
+#[derive(Deserialize)]
+pub struct PromptCache {
+    // Cached prefix still inside its TTL when the payload was built
+    pub warm: Option<bool>,
+    // Whether any response reported cache tokens at all
+    pub caching_observed: Option<bool>,
+    // "5m" | "1h"
+    pub ttl: Option<String>,
+    pub expires_at: Option<i64>,
+    pub requests: Option<u64>,
+    pub misses: Option<u64>,
+    pub expected_rebuilds: Option<u64>,
+    // cache_read / (cache_read + cache_creation + uncached input), 0-1
+    pub hit_ratio: Option<f64>,
+    pub cache_write_tokens: Option<u64>,
+    pub miss_recache_tokens: Option<u64>,
+    pub last_miss_at: Option<i64>,
+    pub last_miss_cause: Option<PromptCacheMissCause>,
+    pub miss_causes: Option<HashMap<String, u64>>,
+    // Tokens the next request re-caches if the cache is cold by then
+    pub recache_tokens_if_cold: Option<u64>,
+}
+
+#[derive(Deserialize)]
+pub struct PromptCacheMissCause {
+    pub causes: Option<Vec<String>>,
+    pub tools_added: Option<u64>,
+    pub tools_removed: Option<u64>,
+    pub system_char_delta: Option<i64>,
+}
+
+// Only sent when the current model supports reasoning effort.
+#[derive(Deserialize)]
+pub struct Effort {
+    // "low" | "medium" | "high" | "xhigh" | "max"
+    pub level: Option<String>,
+}
+
+#[derive(Deserialize)]
+pub struct Thinking {
+    pub enabled: Option<bool>,
 }
 
 // OpenAI-style nested token details
@@ -431,4 +541,178 @@ pub struct TranscriptEntry {
     #[serde(rename = "parentUuid")]
     pub parent_uuid: Option<String>,
     pub summary: Option<String>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    /// statusLine payload captured from Claude Code 2.1.275 (Sonnet 5, 1M context).
+    fn captured_payload() -> serde_json::Value {
+        json!({
+            "session_id": "0c4e2c1e-6a53-4a8e-9a62-7d0f3f6b0001",
+            "transcript_path": "/tmp/session.jsonl",
+            "cwd": "/work/repo",
+            "scratchpad_dir": "/tmp/scratchpad",
+            "prompt_id": "5d1d2d1e-0000-4000-8000-000000000001",
+            "effort": {"level": "high"},
+            "session_name": "ccline upgrade",
+            "model": {"id": "claude-sonnet-5", "display_name": "Sonnet 5"},
+            "workspace": {"current_dir": "/work/repo", "project_dir": "/work/repo", "added_dirs": []},
+            "version": "2.1.275",
+            "output_style": {"name": "default"},
+            "cost": {
+                "total_cost_usd": 0.426719,
+                "total_duration_ms": 1341239,
+                "total_api_duration_ms": 115428,
+                "total_lines_added": 4,
+                "total_lines_removed": 1
+            },
+            "context_window": {
+                "total_input_tokens": 75086,
+                "total_output_tokens": 144,
+                "context_window_size": 1000000,
+                "current_usage": {
+                    "input_tokens": 2,
+                    "output_tokens": 144,
+                    "cache_creation_input_tokens": 896,
+                    "cache_read_input_tokens": 74188
+                },
+                "used_percentage": 8,
+                "remaining_percentage": 92
+            },
+            "exceeds_200k_tokens": false,
+            "prompt_cache": {
+                "warm": true,
+                "caching_observed": true,
+                "ttl": "1h",
+                "expires_at": 1789699173,
+                "requests": 13,
+                "misses": 0,
+                "expected_rebuilds": 0,
+                "hit_ratio": 0.9628340706473149,
+                "cache_write_tokens": 33604,
+                "miss_recache_tokens": 0,
+                "last_miss_at": null,
+                "last_miss_cause": null,
+                "miss_causes": {},
+                "recache_tokens_if_cold": 75086
+            },
+            "fast_mode": false,
+            "thinking": {"enabled": true},
+            "rate_limits": {
+                "five_hour": {"used_percentage": 5, "resets_at": 1789697400},
+                "seven_day": {"used_percentage": 53, "resets_at": 1789826400}
+            }
+        })
+    }
+
+    // main.rs parses from a reader, so go through text rather than from_value
+    fn parse(payload: serde_json::Value) -> InputData {
+        serde_json::from_str(&payload.to_string()).unwrap()
+    }
+
+    #[test]
+    fn parses_every_field_of_a_current_payload() {
+        let input = parse(captured_payload());
+
+        assert_eq!(
+            input.session_id.as_deref(),
+            Some("0c4e2c1e-6a53-4a8e-9a62-7d0f3f6b0001")
+        );
+        assert_eq!(input.session_name.as_deref(), Some("ccline upgrade"));
+        assert_eq!(
+            input.prompt_id.as_deref(),
+            Some("5d1d2d1e-0000-4000-8000-000000000001")
+        );
+        assert_eq!(input.cwd.as_deref(), Some("/work/repo"));
+        assert_eq!(input.scratchpad_dir.as_deref(), Some("/tmp/scratchpad"));
+        assert_eq!(input.version.as_deref(), Some("2.1.275"));
+        assert_eq!(input.workspace.project_dir.as_deref(), Some("/work/repo"));
+        assert_eq!(input.workspace.added_dirs, Some(vec![]));
+        assert_eq!(input.exceeds_200k_tokens, Some(false));
+        assert_eq!(input.fast_mode, Some(false));
+        assert_eq!(input.thinking.unwrap().enabled, Some(true));
+        assert_eq!(input.effort.unwrap().level.as_deref(), Some("high"));
+
+        let context = input.context_window.unwrap();
+        assert_eq!(context.context_window_size, Some(1_000_000));
+        assert_eq!(context.total_input_tokens, Some(75086));
+        assert_eq!(
+            context.current_usage.unwrap().cache_read_input_tokens,
+            Some(74188)
+        );
+        assert_eq!(context.used_percentage, Some(8.0));
+        assert_eq!(context.remaining_percentage, Some(92.0));
+
+        let limits = input.rate_limits.unwrap();
+        let five_hour = limits.five_hour.unwrap();
+        assert_eq!(five_hour.used_percentage, Some(5.0));
+        assert_eq!(five_hour.resets_at, Some(1789697400));
+        assert_eq!(limits.seven_day.unwrap().used_percentage, Some(53.0));
+        assert!(limits.spend_limit.is_none());
+
+        let cache = input.prompt_cache.unwrap();
+        assert_eq!(cache.warm, Some(true));
+        assert_eq!(cache.caching_observed, Some(true));
+        assert_eq!(cache.ttl.as_deref(), Some("1h"));
+        assert_eq!(cache.expires_at, Some(1789699173));
+        assert_eq!(cache.requests, Some(13));
+        assert_eq!(cache.misses, Some(0));
+        assert_eq!(cache.expected_rebuilds, Some(0));
+        assert_eq!(cache.hit_ratio, Some(0.9628340706473149));
+        assert_eq!(cache.cache_write_tokens, Some(33604));
+        assert_eq!(cache.miss_recache_tokens, Some(0));
+        assert_eq!(cache.last_miss_at, None);
+        assert!(cache.last_miss_cause.is_none());
+        assert_eq!(cache.miss_causes, Some(HashMap::new()));
+        assert_eq!(cache.recache_tokens_if_cold, Some(75086));
+    }
+
+    #[test]
+    fn parses_a_payload_from_older_claude_code() {
+        let input = parse(json!({
+            "model": {"id": "claude-sonnet-4-20250514", "display_name": "Sonnet 4"},
+            "workspace": {"current_dir": "/work/repo"},
+            "transcript_path": "/tmp/session.jsonl",
+            "cost": {"total_cost_usd": 0.01},
+            "output_style": {"name": "default"}
+        }));
+
+        assert!(input.context_window.is_none());
+        assert!(input.rate_limits.is_none());
+        assert!(input.prompt_cache.is_none());
+        assert!(input.effort.is_none());
+        assert!(input.thinking.is_none());
+        assert!(input.fast_mode.is_none());
+        assert!(input.exceeds_200k_tokens.is_none());
+        assert!(input.version.is_none());
+        assert!(input.session_id.is_none());
+        assert!(input.workspace.project_dir.is_none());
+        assert!(input.workspace.added_dirs.is_none());
+    }
+
+    #[test]
+    fn a_malformed_new_field_degrades_to_none_instead_of_failing() {
+        let mut payload = captured_payload();
+        payload["effort"] = json!("high");
+        payload["rate_limits"]["five_hour"]["resets_at"] = json!("soon");
+        payload["workspace"]["added_dirs"] = json!("/work/other");
+        payload["fast_mode"] = json!(null);
+
+        let input = parse(payload);
+
+        assert!(input.effort.is_none());
+        assert!(input.rate_limits.is_none());
+        assert!(input.workspace.added_dirs.is_none());
+        assert!(input.fast_mode.is_none());
+        // Everything else is unaffected
+        assert_eq!(input.workspace.current_dir, "/work/repo");
+        assert_eq!(input.prompt_cache.unwrap().requests, Some(13));
+        assert_eq!(
+            input.context_window.unwrap().context_window_size,
+            Some(1_000_000)
+        );
+    }
 }
