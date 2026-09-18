@@ -54,10 +54,11 @@ impl ContextWindowSegment {
             Some(usage) => Some(usage.clone().normalize().display_tokens()),
             // No API call yet in this session: Claude Code sends zeroed
             // totals (and null percentages), so there is nothing to show.
-            None if cw.total_input_tokens.unwrap_or(0) == 0 => None,
-            // Totals without `current_usage` come from older Claude Code
-            // builds, where they may be session-cumulative rather than the
-            // current context: read the transcript as before.
+            None if cw.total_input_tokens == Some(0) => None,
+            // No per-call breakdown: totals from older Claude Code builds may
+            // be session-cumulative rather than the current context, and
+            // without totals there is nothing to go on. Read the transcript
+            // as before.
             None => parse_transcript_usage(&input.transcript_path),
         };
 
@@ -403,6 +404,34 @@ mod tests {
                 .secondary,
             ""
         );
+    }
+
+    #[test]
+    fn falls_back_to_the_transcript_without_a_usage_breakdown() {
+        let dir = std::env::temp_dir().join(format!("ccline-cw-test-{}", std::process::id()));
+        fs::create_dir_all(&dir).unwrap();
+        let transcript = dir.join("session.jsonl");
+        fs::write(
+            &transcript,
+            r#"{"type":"assistant","message":{"usage":{"input_tokens":10,"cache_read_input_tokens":49990,"output_tokens":0}}}"#,
+        )
+        .unwrap();
+
+        for context_window in [
+            // older build: totals (possibly session-cumulative), no current_usage
+            json!({"total_input_tokens": 900_000, "total_output_tokens": 5_000, "context_window_size": 1_000_000}),
+            // no totals at all
+            json!({"context_window_size": 1_000_000}),
+        ] {
+            let mut input = input_with(context_window);
+            input.transcript_path = transcript.to_string_lossy().into_owned();
+            assert_eq!(
+                ContextWindowSegment::resolve_usage(&input),
+                (1_000_000, Some(50_000))
+            );
+        }
+
+        fs::remove_dir_all(&dir).unwrap();
     }
 
     #[test]
