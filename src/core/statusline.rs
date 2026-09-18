@@ -490,7 +490,12 @@ pub fn collect_all_segments(
                 segment.collect(input)
             }
             crate::config::SegmentId::Usage => {
-                let segment = UsageSegment::new();
+                let show_five_hour_reset = segment_config
+                    .options
+                    .get("show_five_hour_reset")
+                    .and_then(|v| v.as_bool())
+                    .unwrap_or(false);
+                let segment = UsageSegment::new().with_five_hour_reset(show_five_hour_reset);
                 segment.collect(input)
             }
             crate::config::SegmentId::Cost => {

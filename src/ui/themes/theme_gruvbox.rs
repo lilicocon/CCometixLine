@@ -158,6 +158,10 @@ pub fn usage_segment() -> SegmentConfig {
                 serde_json::Value::Number(180.into()),
             );
             opts.insert("timeout".to_string(), serde_json::Value::Number(2.into()));
+            opts.insert(
+                "show_five_hour_reset".to_string(),
+                serde_json::Value::Bool(false),
+            );
             opts
         },
     }
