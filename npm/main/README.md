@@ -1,42 +1,58 @@
-# @cometix/ccline
+# @lilicocon/ccline
 
-CCometixLine - High-performance Claude Code StatusLine tool
+High-performance Claude Code status-line renderer (`ccline`).
 
-## Installation
-
-```bash
-npm install -g @cometix/ccline
-```
-
-## Features
-
-- 🚀 **Fast**: Written in Rust for maximum performance
-- 🌍 **Cross-platform**: Works on Windows, macOS, and Linux
-- 📦 **Easy installation**: One command via npm
-- 🔄 **Auto-update**: Built-in update notifications
-- 🎨 **Beautiful**: Nerd Font icons and colors
-
-## Usage
-
-After installation, ccline is automatically configured for Claude Code at `~/.claude/ccline/ccline`.
-
-You can also use it directly:
+## Install
 
 ```bash
-ccline --help
-ccline --version
+npm i -g @lilicocon/ccline
 ```
 
-## For Users in China
-
-Use npm mirror for faster installation:
+China npm mirror:
 
 ```bash
-npm install -g @cometix/ccline --registry https://registry.npmmirror.com
+npm i -g @lilicocon/ccline --registry https://registry.npmmirror.com
 ```
 
-## More Information
+## Fork notice
 
-- GitHub: https://github.com/Haleclipse/CCometixLine
-- Issues: https://github.com/Haleclipse/CCometixLine/issues
-- License: MIT
+This is a fork of [Haleclipse/CCometixLine](https://github.com/Haleclipse/CCometixLine) (original author: Haleclipse).
+
+It conflicts with `@cometix/ccline`: both install the `ccline` command and write `~/.claude/ccline/ccline`. Uninstall the upstream package first:
+
+```bash
+npm uninstall -g @cometix/ccline
+```
+
+## Claude Code
+
+In `settings.json`:
+
+```json
+{
+  "statusLine": {
+    "type": "command",
+    "command": "~/.claude/ccline/ccline",
+    "padding": 0
+  }
+}
+```
+
+## Postinstall
+
+After install, a `postinstall` script hard-links (or copies) the platform binary to `~/.claude/ccline/ccline` (`ccline.exe` on Windows) so Claude Code can run it as the status line.
+
+Skip that step:
+
+```bash
+CCLINE_SKIP_POSTINSTALL=1 npm i -g @lilicocon/ccline
+```
+
+`npm_config_loglevel=silent` only quiets postinstall logs; it does not skip the copy.
+
+## Links
+
+- GitHub: https://github.com/lilicocon/CCometixLine
+- Issues: https://github.com/lilicocon/CCometixLine/issues
+
+License: MIT

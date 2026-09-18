@@ -1,5 +1,5 @@
 {
-  "name": "@cometix/ccline",
+  "name": "@lilicocon/ccline",
   "version": "0.0.0",
   "description": "CCometixLine - High-performance Claude Code StatusLine tool",
   "bin": {
@@ -8,21 +8,23 @@
   "scripts": {
     "postinstall": "node scripts/postinstall.js"
   },
-  "optionalDependencies": {
-    "@cometix/ccline-darwin-x64": "0.0.0",
-    "@cometix/ccline-darwin-arm64": "0.0.0",
-    "@cometix/ccline-linux-x64": "0.0.0",
-    "@cometix/ccline-linux-x64-musl": "0.0.0",
-    "@cometix/ccline-linux-arm64": "0.0.0",
-    "@cometix/ccline-linux-arm64-musl": "0.0.0",
-    "@cometix/ccline-win32-x64": "0.0.0"
-  },
+  "files": [
+    "bin/",
+    "scripts/",
+    "README.md",
+    "LICENSE"
+  ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/Haleclipse/CCometixLine"
+    "url": "git+https://github.com/lilicocon/CCometixLine.git"
+  },
+  "homepage": "https://github.com/lilicocon/CCometixLine#readme",
+  "bugs": {
+    "url": "https://github.com/lilicocon/CCometixLine/issues"
   },
   "keywords": ["claude", "statusline", "claude-code", "rust", "cli"],
-  "author": "Haleclipse",
+  "author": "lilicocon",
+  "contributors": ["Haleclipse (original author) <https://github.com/Haleclipse>"],
   "license": "MIT",
   "engines": {
     "node": ">=14.0.0"
