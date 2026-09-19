@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-09-19
+
+### Added
+- **Usage (7d) Segment** (`usage_weekly`, off by default): the 7-day window on its own, next to `usage` and in its own colors: `42% · 09-19` (share used, local date it resets), with a circle icon filled to the 7-day share. Every theme preset gives it a color distinct from `usage`
+- **Usage**: with `usage_weekly` enabled, `usage` shows only the 5-hour window and its icon fills with the 5-hour share. Without it the combined display is unchanged
+
+### Changed
+- **CI**: GitHub Actions moved to their Node 24 majors (checkout v6, upload-artifact v7, download-artifact v8, setup-node v6, cache v5, action-gh-release v3); `mlugg/setup-zig` has no Node 24 release yet
+
 ## [1.2.0] - 2026-09-18
 
 First release of the fork [lilicocon/CCometixLine](https://github.com/lilicocon/CCometixLine), published to npm as `@licocon/ccline`.
