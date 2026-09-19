@@ -232,7 +232,30 @@ CCometixLine 支持通过 TOML 文件和交互式 TUI 进行完整配置：
 - 颜色自定义
 - 格式选项
 
-支持的段落：目录、Git、模型、使用量、时间、成本、输出样式
+支持的段落：模型、模式、目录、Git、上下文窗口、使用量、使用量（7 天）、Prompt 缓存、会话、成本、输出样式
+
+### 使用量段落（5 小时与 7 天窗口）
+
+在 `usage` 旁边启用 `usage_weekly`，两个限额窗口就会并排显示。两段颜色各自独立，圆形图标按各自窗口的已用比例填充：
+
+```
+󰪣 50% (14:10) | 󰪡 42% · 09-19
+└ usage：5 小时  └ usage_weekly：7 天，09-19 重置
+```
+
+```toml
+[[segments]]
+id = "usage"
+enabled = true
+[segments.options]
+show_five_hour_reset = true   # 追加 5 小时窗口的重置时间，如 (14:10)
+
+[[segments]]
+id = "usage_weekly"
+enabled = true
+```
+
+启用 `usage_weekly` 后，`usage` 只显示 5 小时窗口。不启用时，`usage` 保持原来的合并显示：5 小时已用比例、按 7 天比例填充的图标，以及 `月-日-时` 格式的 7 天重置时间。
 
 ### 模型配置 (`models.toml`)
 

@@ -59,6 +59,7 @@ impl SegmentListComponent {
                     SegmentId::Update => "Update",
                     SegmentId::PromptCache => "Prompt Cache",
                     SegmentId::Mode => "Mode",
+                    SegmentId::UsageWeekly => "Usage (7d)",
                 };
 
                 if is_selected {

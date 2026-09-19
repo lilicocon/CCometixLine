@@ -76,6 +76,7 @@ pub enum SegmentId {
     Update,
     PromptCache,
     Mode,
+    UsageWeekly,
 }
 
 // Legacy compatibility structure

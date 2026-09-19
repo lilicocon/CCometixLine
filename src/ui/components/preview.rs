@@ -193,6 +193,11 @@ impl PreviewComponent {
                     secondary: "".to_string(),
                     metadata: HashMap::new(),
                 },
+                SegmentId::UsageWeekly => SegmentData {
+                    primary: "42%".to_string(),
+                    secondary: "· 09-19".to_string(),
+                    metadata: HashMap::new(),
+                },
             };
 
             segments_data.push((segment_config.clone(), mock_data));

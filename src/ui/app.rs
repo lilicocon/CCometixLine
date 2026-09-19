@@ -508,6 +508,7 @@ impl App {
                         SegmentId::Update => "Update",
                         SegmentId::PromptCache => "Prompt Cache",
                         SegmentId::Mode => "Mode",
+                        SegmentId::UsageWeekly => "Usage (7d)",
                     };
                     let is_enabled = segment.enabled;
                     self.status_message = Some(format!(
@@ -537,6 +538,7 @@ impl App {
                                 SegmentId::Update => "Update",
                                 SegmentId::PromptCache => "Prompt Cache",
                                 SegmentId::Mode => "Mode",
+                                SegmentId::UsageWeekly => "Usage (7d)",
                             };
                             let is_enabled = segment.enabled;
                             self.status_message = Some(format!(

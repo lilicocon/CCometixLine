@@ -461,6 +461,12 @@ pub fn collect_all_segments(
 
     let mut results = Vec::new();
 
+    // With usage_weekly on, usage shows only the 5-hour window
+    let weekly_split = config
+        .segments
+        .iter()
+        .any(|s| s.id == crate::config::SegmentId::UsageWeekly && s.enabled);
+
     for segment_config in &config.segments {
         // Skip disabled segments to avoid unnecessary API requests
         if !segment_config.enabled {
@@ -500,7 +506,13 @@ pub fn collect_all_segments(
                     .get("show_five_hour_reset")
                     .and_then(|v| v.as_bool())
                     .unwrap_or(false);
-                let segment = UsageSegment::new().with_five_hour_reset(show_five_hour_reset);
+                let segment = UsageSegment::new()
+                    .with_five_hour_reset(show_five_hour_reset)
+                    .with_weekly_split(weekly_split);
+                segment.collect(input)
+            }
+            crate::config::SegmentId::UsageWeekly => {
+                let segment = UsageWeeklySegment::new();
                 segment.collect(input)
             }
             crate::config::SegmentId::Cost => {

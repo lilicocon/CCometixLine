@@ -38,6 +38,7 @@ impl SettingsComponent {
                 SegmentId::Update => "Update",
                 SegmentId::PromptCache => "Prompt Cache",
                 SegmentId::Mode => "Mode",
+                SegmentId::UsageWeekly => "Usage (7d)",
             };
             let current_icon = match config.style.mode {
                 StyleMode::Plain => &segment.icon.plain,

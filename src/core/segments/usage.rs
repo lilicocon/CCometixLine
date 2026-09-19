@@ -41,6 +41,7 @@ struct UsageFigures {
 #[derive(Default)]
 pub struct UsageSegment {
     show_five_hour_reset: bool,
+    weekly_split: bool,
 }
 
 impl UsageSegment {
@@ -52,6 +53,19 @@ impl UsageSegment {
     pub fn with_five_hour_reset(mut self, show: bool) -> Self {
         self.show_five_hour_reset = show;
         self
+    }
+
+    /// Leave the 7-day window to the `usage_weekly` segment: the icon then
+    /// tracks the 5-hour window and the 7-day reset time is dropped, so this
+    /// segment shows the 5-hour window only.
+    pub fn with_weekly_split(mut self, split: bool) -> Self {
+        self.weekly_split = split;
+        self
+    }
+
+    /// Payload first; the OAuth usage API (cached) for older Claude Code.
+    fn figures(&self, input: &InputData) -> Option<UsageFigures> {
+        Self::figures_from_payload(input).or_else(|| self.figures_from_api(input))
     }
 
     fn get_circle_icon(utilization: f64) -> String {
@@ -292,7 +306,12 @@ impl UsageSegment {
     }
 
     fn render(&self, figures: &UsageFigures) -> SegmentData {
-        let dynamic_icon = Self::get_circle_icon(figures.seven_day / 100.0);
+        let icon_utilization = if self.weekly_split {
+            figures.five_hour
+        } else {
+            figures.seven_day
+        };
+        let dynamic_icon = Self::get_circle_icon(icon_utilization / 100.0);
         let five_hour_percent = figures.five_hour.round() as u8;
         let primary = match figures.five_hour_resets_at {
             Some(reset) if self.show_five_hour_reset => format!(
@@ -302,7 +321,11 @@ impl UsageSegment {
             ),
             _ => format!("{}%", five_hour_percent),
         };
-        let secondary = format!("· {}", Self::format_reset_time(figures.seven_day_resets_at));
+        let secondary = if self.weekly_split {
+            String::new()
+        } else {
+            format!("· {}", Self::format_reset_time(figures.seven_day_resets_at))
+        };
 
         let mut metadata = HashMap::new();
         metadata.insert("dynamic_icon".to_string(), dynamic_icon);
@@ -326,12 +349,62 @@ impl UsageSegment {
 
 impl Segment for UsageSegment {
     fn collect(&self, input: &InputData) -> Option<SegmentData> {
-        let figures = Self::figures_from_payload(input).or_else(|| self.figures_from_api(input))?;
+        let figures = self.figures(input)?;
         Some(self.render(&figures))
     }
 
     fn id(&self) -> SegmentId {
         SegmentId::Usage
+    }
+}
+
+/// The 7-day window on its own, next to the `usage` segment and in its own
+/// colors: `42% · 09-19` (share used, and the local date it resets). The
+/// icon fills with the 7-day share. Enabling it turns `usage` into the
+/// 5-hour window only (see `UsageSegment::with_weekly_split`).
+#[derive(Default)]
+pub struct UsageWeeklySegment;
+
+impl UsageWeeklySegment {
+    pub fn new() -> Self {
+        Self
+    }
+
+    fn render(figures: &UsageFigures) -> SegmentData {
+        let secondary = figures
+            .seven_day_resets_at
+            .map(|reset| format!("· {}", reset.with_timezone(&Local).format("%m-%d")))
+            .unwrap_or_default();
+
+        let mut metadata = HashMap::new();
+        metadata.insert(
+            "dynamic_icon".to_string(),
+            UsageSegment::get_circle_icon(figures.seven_day / 100.0),
+        );
+        metadata.insert(
+            "seven_day_utilization".to_string(),
+            figures.seven_day.to_string(),
+        );
+        metadata.insert("source".to_string(), figures.source.to_string());
+
+        SegmentData {
+            primary: format!("{}%", figures.seven_day.round() as u8),
+            secondary,
+            metadata,
+        }
+    }
+}
+
+impl Segment for UsageWeeklySegment {
+    fn collect(&self, input: &InputData) -> Option<SegmentData> {
+        // Same source as `usage`: with both enabled and no payload figures,
+        // the second lookup is served by the cache the first one wrote.
+        let figures = UsageSegment::new().figures(input)?;
+        Some(Self::render(&figures))
+    }
+
+    fn id(&self) -> SegmentId {
+        SegmentId::UsageWeekly
     }
 }
 
@@ -431,5 +504,49 @@ mod tests {
             UsageSegment::parse_reset_time(cache.resets_at.as_deref()),
             DateTime::from_timestamp(1790301600, 0)
         );
+    }
+
+    #[test]
+    fn weekly_split_leaves_usage_with_the_five_hour_window() {
+        let input = input_with(captured_limits());
+        let data = UsageSegment::new()
+            .with_weekly_split(true)
+            .collect(&input)
+            .unwrap();
+
+        assert_eq!(data.primary, "5%");
+        // The 7-day reset moves to usage_weekly
+        assert_eq!(data.secondary, "");
+        // 5% of the 5-hour window used -> circle_slice_1, not the week's 53%
+        assert_eq!(data.metadata["dynamic_icon"], "\u{f0a9e}");
+    }
+
+    #[test]
+    fn usage_weekly_shows_the_seven_day_window() {
+        let input = input_with(captured_limits());
+        let data = UsageWeeklySegment::new().collect(&input).unwrap();
+
+        assert_eq!(data.primary, "53%");
+        assert_eq!(
+            data.secondary,
+            format!("· {}", local(1789826400).format("%m-%d"))
+        );
+        // Zero-padded month and day, e.g. "09-19"
+        assert_eq!(data.secondary.len(), "· 09-19".len());
+        // 53% of the week used -> circle_slice_5
+        assert_eq!(data.metadata["dynamic_icon"], "\u{f0aa2}");
+        assert_eq!(data.metadata["source"], "payload");
+    }
+
+    #[test]
+    fn usage_weekly_without_a_reset_time_shows_the_percentage_only() {
+        let input = input_with(json!({
+            "five_hour": {"used_percentage": 5},
+            "seven_day": {"used_percentage": 53}
+        }));
+        let data = UsageWeeklySegment::new().collect(&input).unwrap();
+
+        assert_eq!(data.primary, "53%");
+        assert_eq!(data.secondary, "");
     }
 }

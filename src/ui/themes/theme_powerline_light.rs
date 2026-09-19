@@ -293,3 +293,19 @@ pub fn mode_segment() -> SegmentConfig {
         options: HashMap::new(),
     }
 }
+
+pub fn usage_weekly_segment() -> SegmentConfig {
+    // Git's palette, so the 7-day window reads apart from the 5-hour usage next to it
+    let base = git_segment();
+    SegmentConfig {
+        id: SegmentId::UsageWeekly,
+        enabled: false,
+        icon: IconConfig {
+            plain: "📅".to_string(),
+            nerd_font: "\u{f0a9e}".to_string(), // circle_slice_1; filled to the 7-day share at render
+        },
+        colors: base.colors,
+        styles: base.styles,
+        options: HashMap::new(),
+    }
+}

@@ -37,4 +37,4 @@ pub use output_style::OutputStyleSegment;
 pub use prompt_cache::PromptCacheSegment;
 pub use session::SessionSegment;
 pub use update::UpdateSegment;
-pub use usage::UsageSegment;
+pub use usage::{UsageSegment, UsageWeeklySegment};

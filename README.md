@@ -240,7 +240,30 @@ All segments are configurable with:
 - Color customization
 - Format options
 
-Supported segments: Directory, Git, Model, Usage, Time, Cost, OutputStyle
+Supported segments: Model, Mode, Directory, Git, Context Window, Usage, Usage (7d), Prompt Cache, Session, Cost, Output Style
+
+### Usage Segments (5-hour and 7-day windows)
+
+Enable `usage_weekly` next to `usage` to show the two rate-limit windows side by side, each with its own colors and a circle icon that fills with that window's share:
+
+```
+󰪣 50% (14:10) | 󰪡 42% · 09-19
+└ usage: 5h    └ usage_weekly: 7d, resets on 09-19
+```
+
+```toml
+[[segments]]
+id = "usage"
+enabled = true
+[segments.options]
+show_five_hour_reset = true   # append the 5-hour reset time, e.g. (14:10)
+
+[[segments]]
+id = "usage_weekly"
+enabled = true
+```
+
+With `usage_weekly` enabled, `usage` shows only the 5-hour window. Without it, `usage` keeps its combined display: 5-hour share, an icon filled to the 7-day share, and the 7-day reset as `month-day-hour`.
 
 ### Model Configuration (`models.toml`)
 
