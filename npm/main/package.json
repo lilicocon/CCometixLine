@@ -1,5 +1,5 @@
 {
-  "name": "@lilicocon/ccline",
+  "name": "@licocon/ccline",
   "version": "0.0.0",
   "description": "CCometixLine - High-performance Claude Code StatusLine tool",
   "bin": {

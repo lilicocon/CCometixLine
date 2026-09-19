@@ -2,6 +2,8 @@
 
 [English](README.md) | [中文](README.zh.md)
 
+> **Fork 说明：** 本项目 fork 自 [Haleclipse/CCometixLine](https://github.com/Haleclipse/CCometixLine)（原作者：Haleclipse），npm 包名为 `@licocon/ccline`。它与上游的 `@cometix/ccline` 冲突（两者都会安装 `ccline` 命令并写入 `~/.claude/ccline/ccline`），请先执行 `npm uninstall -g @cometix/ccline`。
+
 基于 Rust 的高性能 Claude Code 状态栏工具，集成 Git 信息、使用量跟踪、交互式 TUI 配置和 Claude Code 补丁工具。
 
 ![Language:Rust](https://img.shields.io/static/v1?label=Language&message=Rust&color=orange&style=flat-square)
@@ -43,18 +45,18 @@
 
 ```bash
 # 全局安装
-npm install -g @cometix/ccline
+npm install -g @licocon/ccline
 
 # 或使用 yarn
-yarn global add @cometix/ccline
+yarn global add @licocon/ccline
 
 # 或使用 pnpm
-pnpm add -g @cometix/ccline
+pnpm add -g @licocon/ccline
 ```
 
 使用镜像源加速下载：
 ```bash
-npm install -g @cometix/ccline --registry https://registry.npmmirror.com
+npm install -g @licocon/ccline --registry https://registry.npmmirror.com
 ```
 
 安装后：
@@ -96,20 +98,20 @@ npm install -g @cometix/ccline --registry https://registry.npmmirror.com
 ### 更新
 
 ```bash
-npm update -g @cometix/ccline
+npm update -g @licocon/ccline
 ```
 
 <details>
 <summary>手动安装（点击展开）</summary>
 
-或者从 [Releases](https://github.com/Haleclipse/CCometixLine/releases) 手动下载：
+或者从 [Releases](https://github.com/lilicocon/CCometixLine/releases) 手动下载：
 
 #### Linux
 
 #### 选项 1: 动态链接版本（推荐）
 ```bash
 mkdir -p ~/.claude/ccline
-wget https://github.com/Haleclipse/CCometixLine/releases/latest/download/ccline-linux-x64.tar.gz
+wget https://github.com/lilicocon/CCometixLine/releases/latest/download/ccline-linux-x64.tar.gz
 tar -xzf ccline-linux-x64.tar.gz
 cp ccline ~/.claude/ccline/
 chmod +x ~/.claude/ccline/ccline
@@ -119,7 +121,7 @@ chmod +x ~/.claude/ccline/ccline
 #### 选项 2: 静态链接版本（通用兼容）
 ```bash
 mkdir -p ~/.claude/ccline
-wget https://github.com/Haleclipse/CCometixLine/releases/latest/download/ccline-linux-x64-static.tar.gz
+wget https://github.com/lilicocon/CCometixLine/releases/latest/download/ccline-linux-x64-static.tar.gz
 tar -xzf ccline-linux-x64-static.tar.gz
 cp ccline ~/.claude/ccline/
 chmod +x ~/.claude/ccline/ccline
@@ -130,7 +132,7 @@ chmod +x ~/.claude/ccline/ccline
 
 ```bash  
 mkdir -p ~/.claude/ccline
-wget https://github.com/Haleclipse/CCometixLine/releases/latest/download/ccline-macos-x64.tar.gz
+wget https://github.com/lilicocon/CCometixLine/releases/latest/download/ccline-macos-x64.tar.gz
 tar -xzf ccline-macos-x64.tar.gz
 cp ccline ~/.claude/ccline/
 chmod +x ~/.claude/ccline/ccline
@@ -140,7 +142,7 @@ chmod +x ~/.claude/ccline/ccline
 
 ```bash
 mkdir -p ~/.claude/ccline  
-wget https://github.com/Haleclipse/CCometixLine/releases/latest/download/ccline-macos-arm64.tar.gz
+wget https://github.com/lilicocon/CCometixLine/releases/latest/download/ccline-macos-arm64.tar.gz
 tar -xzf ccline-macos-arm64.tar.gz
 cp ccline ~/.claude/ccline/
 chmod +x ~/.claude/ccline/ccline
@@ -151,7 +153,7 @@ chmod +x ~/.claude/ccline/ccline
 ```powershell
 # 创建目录并下载
 New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.claude\ccline"
-Invoke-WebRequest -Uri "https://github.com/Haleclipse/CCometixLine/releases/latest/download/ccline-windows-x64.zip" -OutFile "ccline-windows-x64.zip"
+Invoke-WebRequest -Uri "https://github.com/lilicocon/CCometixLine/releases/latest/download/ccline-windows-x64.zip" -OutFile "ccline-windows-x64.zip"
 Expand-Archive -Path "ccline-windows-x64.zip" -DestinationPath "."
 Move-Item "ccline.exe" "$env:USERPROFILE\.claude\ccline\"
 ```
@@ -161,7 +163,7 @@ Move-Item "ccline.exe" "$env:USERPROFILE\.claude\ccline\"
 ### 从源码构建
 
 ```bash
-git clone https://github.com/Haleclipse/CCometixLine.git
+git clone https://github.com/lilicocon/CCometixLine.git
 cd CCometixLine
 cargo build --release
 cp target/release/ccometixline ~/.claude/ccline/ccline
@@ -301,4 +303,4 @@ cargo build --release
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=Haleclipse/CCometixLine&type=Date)](https://star-history.com/#Haleclipse/CCometixLine&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=lilicocon/CCometixLine&type=Date)](https://star-history.com/#lilicocon/CCometixLine&Date)

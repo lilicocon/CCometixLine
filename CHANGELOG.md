@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.2.0] - 2026-09-18
 
-First release of the fork [lilicocon/CCometixLine](https://github.com/lilicocon/CCometixLine), published to npm as `@lilicocon/ccline`.
+First release of the fork [lilicocon/CCometixLine](https://github.com/lilicocon/CCometixLine), published to npm as `@licocon/ccline`.
 
 ### Added
 - **Full statusLine Payload**: Model every field Claude Code 2.1.275 sends (`rate_limits`, `prompt_cache`, `effort`, `thinking`, `fast_mode`, `exceeds_200k_tokens`, `version`, session and workspace details). New fields are parsed leniently: a missing or malformed field becomes `None` instead of blanking the status line
@@ -22,12 +22,12 @@ First release of the fork [lilicocon/CCometixLine](https://github.com/lilicocon/
 
 ### Fixed
 - **Context Window Size**: Use `context_window.context_window_size` and the last call's usage from the payload instead of guessing 200k from the model id; 1M-context sessions showed ~5x the real percentage (34% instead of 7.5%). Shows `-` before the first API response instead of another session's numbers
-- **Update Check**: Poll `@lilicocon/ccline` instead of upstream's `@cometix/ccline`
+- **Update Check**: Poll `@licocon/ccline` instead of upstream's `@cometix/ccline`
 - **npm 11 Publishing**: Keep the `ccline` bin entry (npm 11 dropped `./`-prefixed bin paths)
 - **Clippy**: Fix the lints that failed `cargo clippy -- -D warnings` on Rust 1.98
 
 ### Changed
-- **npm Distribution**: Packages renamed to `@lilicocon/ccline` and `@lilicocon/ccline-<platform>`; real publishing is gated on the `NPM_PUBLISH` repository variable, every tag dry-runs it
+- **npm Distribution**: Packages renamed to `@licocon/ccline` and `@licocon/ccline-<platform>`; real publishing is gated on the `NPM_PUBLISH` repository variable, every tag dry-runs it
 - **Release Workflow**: Tags must match the `Cargo.toml` version and have a `CHANGELOG.md` section, which becomes the GitHub Release notes
 
 ## [1.1.2] - 2026-03-15

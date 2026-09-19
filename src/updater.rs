@@ -154,7 +154,7 @@ impl UpdateState {
 /// npm registry version check
 mod registry {
     /// The npm package this fork is published as (npm/main/package.json)
-    pub(super) const NPM_PACKAGE: &str = "@lilicocon/ccline";
+    pub(super) const NPM_PACKAGE: &str = "@licocon/ccline";
 
     /// Check the latest published version of NPM_PACKAGE
     pub fn check_for_updates() -> Result<Option<String>, Box<dyn std::error::Error>> {

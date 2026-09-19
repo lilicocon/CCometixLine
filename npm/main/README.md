@@ -1,17 +1,17 @@
-# @lilicocon/ccline
+# @licocon/ccline
 
 High-performance Claude Code status-line renderer (`ccline`).
 
 ## Install
 
 ```bash
-npm i -g @lilicocon/ccline
+npm i -g @licocon/ccline
 ```
 
 China npm mirror:
 
 ```bash
-npm i -g @lilicocon/ccline --registry https://registry.npmmirror.com
+npm i -g @licocon/ccline --registry https://registry.npmmirror.com
 ```
 
 ## Fork notice
@@ -45,7 +45,7 @@ After install, a `postinstall` script hard-links (or copies) the platform binary
 Skip that step:
 
 ```bash
-CCLINE_SKIP_POSTINSTALL=1 npm i -g @lilicocon/ccline
+CCLINE_SKIP_POSTINSTALL=1 npm i -g @licocon/ccline
 ```
 
 `npm_config_loglevel=silent` only quiets postinstall logs; it does not skip the copy.
@@ -54,7 +54,7 @@ npm 11 warns that the postinstall script is not covered by `allow-scripts`. If
 your npm version blocks unapproved install scripts, allow this one explicitly:
 
 ```bash
-npm i -g @lilicocon/ccline --allow-scripts=@lilicocon/ccline
+npm i -g @licocon/ccline --allow-scripts=@licocon/ccline
 ```
 
 or skip the copy entirely and point `statusLine.command` at `ccline` (the global
